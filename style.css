@@ -16,7 +16,8 @@ html, body {
   background: radial-gradient(circle at top, #10253c 0%, var(--bg) 58%, #03070e 100%);
   color: var(--text);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: auto;
 }
 body { padding: 14px; }
 button, select { font: inherit; }
@@ -100,9 +101,15 @@ button:active { transform: translateY(1px) scale(.99); }
   border: 2px solid rgba(255,255,255,.18);
   box-shadow: 0 20px 60px rgba(0,0,0,.4), 0 0 28px rgba(105,240,255,.08);
   background: #02060b;
-  touch-action: none;
+  /* 盤面上を上下スワイプしてもページ位置を調整できるようにする */
+  touch-action: pan-y;
 }
-canvas { display: block; width: 100%; height: 100%; }
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+}
 
 .message {
   position: absolute;

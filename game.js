@@ -77,7 +77,7 @@
       gravity: 625, wallRestitution: 0.90, bumperBounce: 1.42,
       bumpers: [
         {id:'n-b1', x: 208, y: 328, r: 52, value: 250, shape:'ring'},
-        {id:'n-b2', x: 472, y: 286, r: 45, value: 320, shape:'hex'},
+        {id:'n-b2', x: 472, y: 405, r: 45, value: 320, shape:'hex'},
         {id:'n-b3', x: 378, y: 515, r: 63, value: 450, shape:'star'}
       ],
       targets: [
@@ -107,7 +107,7 @@
         {id:'s-t1', x:108, y:382, w:40, h:48, value:240, shape:'triangle'},
         {id:'s-t2', x:535, y:575, w:44, h:44, value:280, shape:'diamond'}
       ],
-      posts: [{x:238, y:790, r:22}, {x:505, y:820, r:18}, {x:548, y:300, r:14}],
+      posts: [{x:238, y:790, r:22}, {x:505, y:820, r:18}, {x:548, y:420, r:14}],
       extraSegments: [
         {id:'s-orbitL', x1:145, y1:655, x2:230, y2:714, restitution:.88, value:90, boost:28, kind:'orbit'},
         {id:'s-orbitR', x1:560, y1:740, x2:500, y2:790, restitution:.90, value:110, boost:32, kind:'orbit'}
@@ -194,16 +194,27 @@
     {id:'launchDivider0', x1: 648, y1: 1140, x2: 648, y2: 235},
     {id:'launchDivider1', x1: 648, y1: 235, x2: 647, y2: 212},
     {id:'launchDivider2', x1: 647, y1: 212, x2: 643, y2: 190},
-    {id:'launchDivider3', x1: 643, y1: 190, x2: 636, y2: 170},
-    {id:'launchDivider4', x1: 636, y1: 170, x2: 626, y2: 152},
-    {id:'launchDivider5', x1: 626, y1: 152, x2: 613, y2: 137},
-    {id:'launchDivider6', x1: 613, y1: 137, x2: 597, y2: 126},
-    {id:'launchDivider7', x1: 597, y1: 126, x2: 578, y2: 119}
+    {id:'launchDivider3', x1: 643, y1: 190, x2: 639, y2: 170},
+    {id:'launchDivider4', x1: 639, y1: 170, x2: 634, y2: 154},
+    {id:'launchDivider5', x1: 634, y1: 154, x2: 626, y2: 141},
+    {id:'launchDivider6', x1: 626, y1: 141, x2: 616, y2: 132},
+    {id:'launchDivider7', x1: 616, y1: 132, x2: 604, y2: 126}
   ];
 
   // インレーン側ガイドはフリッパー支点まで直接つなぐ。
   // 前版より傾斜を緩くし、ボールがガイド上を滑ってフリッパー根元へ
   // 自然に落ちるよう左右対称の配置にする。
+  // LAUNCH出口のワンウェイゲート。
+  // 発射レーン -> フィールド方向は通過させ、フィールド -> LAUNCH方向だけを遮断する。
+  // launchDividerの先端を支点にした小さな可動板として表示する。
+  const launchOneWayGate = {
+    id: 'launchOneWayGate',
+    x1: 604, y1: 126,
+    x2: 636, y2: 98,
+    restitution: 0.58,
+    _flashUntil: 0
+  };
+
   const laneGuides = [
     {id:'leftReturnGuide',  x1: 82,  y1: 885, x2: 205, y2: 1010},
     {id:'rightReturnGuide', x1: 618, y1: 885, x2: 495, y2: 1010}
@@ -212,13 +223,13 @@
   const leftSling = {id:'slingL', x1: 168, y1: 842, x2: 252, y2: 905, value: 80};
   const rightSling = {id:'slingR', x1: 532, y1: 842, x2: 448, y2: 905, value: 80};
 
-  // 先端間に約85pxの隙間を確保。ボール直径32pxでも中央ドレインが成立する。
+  // 先端間に約85pxの隙間を確保。ボール直径36pxでも中央ドレインが成立する。
   const leftFlipper = {
-    pivotX: 205, pivotY: 1010, length: 105, width: 26,
+    pivotX: 205, pivotY: 1010, length: 105, width: 26, baseWidth: 46, tipWidth: 24,
     angle: 0.24, rest: 0.24, active: -0.62, side: 'left', angularVelocity: 0
   };
   const rightFlipper = {
-    pivotX: 495, pivotY: 1010, length: 105, width: 26,
+    pivotX: 495, pivotY: 1010, length: 105, width: 26, baseWidth: 46, tipWidth: 24,
     angle: Math.PI - 0.24, rest: Math.PI - 0.24, active: Math.PI + 0.62, side: 'right', angularVelocity: 0
   };
 
@@ -395,7 +406,7 @@
 
     // 短押しでもフィールドへ届く最低速度を確保し、
     // 長押しでは上部カーブへより強く打ち込めるようにする。
-    const launchSpeed = 1180 + 470 * charge;
+    const launchSpeed = 1320 + 560 * charge;
     ball.inLauncher = false;
     ball.enteredField = false;
     ball.topGuideTriggered = false;
@@ -558,7 +569,10 @@
     const dx = ball.x - p.x;
     const dy = ball.y - p.y;
     const dist = Math.hypot(dx, dy);
-    const radius = f.width / 2 + ball.r;
+    const baseWidth = f.baseWidth || f.width;
+    const tipWidth = f.tipWidth || f.width;
+    const localWidth = baseWidth + (tipWidth - baseWidth) * p.t;
+    const radius = localWidth / 2 + ball.r;
     if (dist >= radius || dist <= 0.001) return false;
 
     const nx = dx / dist;
@@ -586,25 +600,50 @@
     return true;
   }
 
+  function handleLaunchOneWayGate() {
+    // 発射中はゲートを自由に押し開けられる扱いにする。
+    // フィールドへ入った後、右向きにLAUNCH出口へ戻ろうとするボールだけを反射する。
+    if (ball.inLauncher || !ball.enteredField || ball.vx <= 20) return false;
+    if (ball.x < 555 || ball.x > 665 || ball.y < 72 || ball.y > 205) return false;
+
+    const hit = collideSegment(launchOneWayGate, launchOneWayGate.restitution, { material: 'gate' });
+    if (!hit) return false;
+
+    // 反射後に再びゲートへ潜り込まないよう、確実にフィールド中央側へ戻す。
+    ball.vx = -Math.max(300, Math.abs(ball.vx) * 0.72);
+    ball.vy = Math.max(ball.vy, 90);
+    launchOneWayGate._flashUntil = performance.now() + 150;
+    return true;
+  }
+
   function handleLauncherGuide() {
-    // 発射レーン上端は全台共通のガイド特性にする。
-    // JUNGLE RUINSのように台全体の反発係数が低い場合でも、ここだけは
-    // カーブに沿って左へ抜ける最低限の横方向速度を与え、発射不能を防ぐ。
-    // ボール座標を瞬間移動させるのではなく、実際の速度を補助する。
-    if (!ball.inLauncher && !ball.enteredField && !ball.topGuideTriggered && ball.y < 158 && ball.x > 622) {
+    // LAUNCHレーン上端では、ボールが外周に強く跳ね返されて再び真下へ戻らないよう、
+    // 上昇速度を少し横方向へ変換する。座標の瞬間移動は行わず、カーブを回る速度だけ補助する。
+    if (!ball.inLauncher && !ball.enteredField && ball.x > 620 && ball.y < 112) {
       ball.topGuideTriggered = true;
-      ball.vx = Math.min(ball.vx, -520);
-      ball.vy = Math.min(ball.vy, -120);
+      ball.vx = Math.min(ball.vx, -760);
+      // 仕切りガイド先端より上で横方向へ向きを変え、カーブの側面へ突き刺さらないようにする。
+      ball.vy = Math.max(ball.vy, 35);
+    }
+
+    // 内側ガイド先端を越えた後も左向き速度を確保し、
+    // ENTRY直後にLAUNCHレーンへ跳ね返る確率を下げる。
+    if (!ball.inLauncher && !ball.enteredField && ball.topGuideTriggered && ball.x < 635 && ball.y < 205) {
+      ball.vx = Math.min(ball.vx, -620);
+      ball.vy = Math.max(ball.vy, 80);
     }
 
     // カーブ先端を回り込み、プレイフィールド側へ入った時点でエントリー成立。
-    if (!ball.inLauncher && !ball.enteredField && ball.x < 616 && ball.y < 205) {
+    if (!ball.inLauncher && !ball.enteredField && ball.x < 600 && ball.y < 255) {
       ball.enteredField = true;
+      // エントリー直後は少し下向きに流し、右上の開口へ即座に戻りにくくする。
+      ball.vx = Math.min(ball.vx, -430);
+      ball.vy = Math.max(ball.vy, 120);
       addScore(500, false);
       sfx('lane');
     }
 
-    // 一度フィールドへ出たボールが上部の開口からLAUNCHレーンへ戻った場合は、
+    // 一度フィールドへ出たボールがLAUNCHレーンへ戻った場合は、
     // ボールロストにせず、そのままレーンを落下させてプランジャーへ再装填する。
     if (!ball.inLauncher && ball.enteredField && ball.x > 656 && ball.y > 255) {
       ball.enteredField = false;
@@ -745,6 +784,10 @@
           (w.id.startsWith('outerRT') || w.id.startsWith('launchDivider'));
         collideSegment(w, launcherWall ? 0.94 : t.wallRestitution);
       }
+
+      // LAUNCH出口の逆流防止ゲート。発射時は素通りし、フィールド側からのみ衝突する。
+      handleLaunchOneWayGate();
+
       for (const g of laneGuides) collideSegment(g, 0.42);
 
       for (const b of t.bumpers) collideCircle(b, t.bumperBounce, b.value);
@@ -791,6 +834,38 @@
     ctx.moveTo(seg.x1, seg.y1);
     ctx.lineTo(seg.x2, seg.y2);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawLaunchOneWayGate(t) {
+    // 発射中にボールが出口へ近づいた時だけ、板がフィールド側へ押し開かれるように見せる。
+    const opening = !ball.inLauncher && !ball.enteredField &&
+      ball.x > 575 && ball.y < 205 ? 1 : 0;
+    const endX = opening ? 584 : launchOneWayGate.x2;
+    const endY = opening ? 108 : launchOneWayGate.y2;
+    const flash = performance.now() < (launchOneWayGate._flashUntil || 0);
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.shadowColor = flash ? '#ffffff' : t.accent;
+    ctx.shadowBlur = flash ? 22 : 10;
+    ctx.strokeStyle = flash ? '#ffffff' : 'rgba(235,242,250,.92)';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(launchOneWayGate.x1, launchOneWayGate.y1);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+
+    // 支点と逆流防止方向を示す小さなマーク。
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = t.accent;
+    ctx.beginPath();
+    ctx.arc(launchOneWayGate.x1, launchOneWayGate.y1, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.font = '900 10px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('↤', 620, 116);
     ctx.restore();
   }
 
@@ -842,9 +917,9 @@
     ctx.lineTo(700, 1138);
     ctx.lineTo(700, 158);
     ctx.quadraticCurveTo(697, 112, 678, 88);
-    ctx.quadraticCurveTo(655, 68, 625, 64);
-    ctx.quadraticCurveTo(640, 92, 615, 122);
-    ctx.quadraticCurveTo(648, 150, 653, 228);
+    ctx.quadraticCurveTo(655, 68, 628, 66);
+    ctx.quadraticCurveTo(642, 94, 606, 126);
+    ctx.quadraticCurveTo(644, 154, 653, 228);
     ctx.closePath();
     ctx.fill();
 
@@ -1041,6 +1116,8 @@
     for (const w of walls) drawSegment(w, t.line, 10);
     for (const g of laneGuides) drawSegment(g, t.line, 8, .88);
     ctx.restore();
+
+    drawLaunchOneWayGate(t);
 
     // プランジャー／発射レーン。
     // 枠の上端は描かず、内側仕切り壁の切れ目からフィールドへ入れることを示す。
@@ -1278,24 +1355,59 @@
   }
 
   function drawFlipper(f, color) {
-    const ep = flipperEndpoints(f);
+    // 実機や一般的なピンボールゲームに近い、根元が太く先端が細い
+    // 「角丸三角／テーパーパドル」形状。回転中心は従来どおり支点に置く。
+    const baseHalf = (f.baseWidth || 46) / 2;
+    const tipHalf = (f.tipWidth || 24) / 2;
+    const L = f.length;
+
     ctx.save();
+    ctx.translate(f.pivotX, f.pivotY);
+    ctx.rotate(f.angle);
     ctx.shadowColor = color;
     ctx.shadowBlur = 18;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = f.width;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(ep.x1, ep.y1);
-    ctx.lineTo(ep.x2, ep.y2);
+
+    const paddlePath = () => {
+      ctx.beginPath();
+      ctx.moveTo(-7, -baseHalf + 3);
+      ctx.quadraticCurveTo(-18, -baseHalf + 7, -18, 0);
+      ctx.quadraticCurveTo(-18, baseHalf - 7, -7, baseHalf - 3);
+      ctx.lineTo(L - 13, tipHalf);
+      ctx.quadraticCurveTo(L + 2, tipHalf, L + 3, 0);
+      ctx.quadraticCurveTo(L + 2, -tipHalf, L - 13, -tipHalf);
+      ctx.closePath();
+    };
+
+    const grad = ctx.createLinearGradient(0, -baseHalf, L, tipHalf);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, 'rgba(255,255,255,.92)');
+    paddlePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.86)';
+    ctx.lineWidth = 3;
     ctx.stroke();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 4;
-    ctx.globalAlpha = .7;
+
+    // 内側のハイライトもテーパーさせて立体感を出す。
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = .42;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(ep.x1, ep.y1);
-    ctx.lineTo(ep.x2, ep.y2);
+    ctx.moveTo(2, -baseHalf * .48);
+    ctx.lineTo(L - 15, -tipHalf * .38);
     ctx.stroke();
+
+    // 支点キャップ。
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#f7fbff';
+    ctx.beginPath();
+    ctx.arc(0, 0, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(0, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 
