@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>スマホ対応ピンボール</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>PINBALL</h1>
+        <p>スマホ対応・3種類の台・3ボール制</p>
+      </div>
+      <button id="soundBtn" class="icon-btn" aria-label="サウンド切替">🔊</button>
+    </header>
+
+    <section class="panel settings">
+      <label>
+        台の種類
+        <select id="tableSelect">
+          <option value="neon">NEON CITY</option>
+          <option value="space">SPACE ORBIT</option>
+          <option value="jungle">JUNGLE RUINS</option>
+        </select>
+      </label>
+      <button id="startBtn" class="primary">ゲーム開始</button>
+      <button id="pauseBtn">一時停止</button>
+      <p id="tableDesc" class="table-desc">高速バウンドと可動ゲートが特徴のスピード台。</p>
+    </section>
+
+    <section class="hud panel">
+      <div><span>SCORE</span><strong id="score">0</strong></div>
+      <div><span>HIGH</span><strong id="highScore">0</strong></div>
+      <div><span>BALL</span><strong id="balls">3</strong></div>
+      <div><span>MULTI</span><strong id="multiplier">x1</strong></div>
+    </section>
+
+    <section class="game-wrap">
+      <canvas id="gameCanvas" width="720" height="1180" aria-label="ピンボールゲーム画面"></canvas>
+      <div id="message" class="message visible">
+        <strong>PINBALL</strong>
+        <span>「ゲーム開始」を押してください</span>
+      </div>
+    </section>
+
+    <section class="mobile-controls" aria-label="ゲーム操作">
+      <button id="leftBtn" class="flipper-btn">◀ LEFT</button>
+      <button id="launchBtn" class="launch-btn">HOLD<br>LAUNCH</button>
+      <button id="rightBtn" class="flipper-btn">RIGHT ▶</button>
+    </section>
+
+    <section class="help panel">
+      <p><b>PC：</b>左フリッパー A / ←　右フリッパー D / →　発射 SPACE長押し→離す</p>
+      <p><b>スマホ：</b>画面下の LEFT / RIGHT、LAUNCHは長押しして離す</p>
+      <p><b>ルール：</b>3ボール制。トップレーン 200/500/200 をすべて通過すると倍率アップ。中央ドレイン／アウトレーンへの落球で1ボール失います。LAUNCHレーンへ戻った場合は再発射できます。</p>
+      <p><b>台の特徴：</b>NEON＝高速＋可動ゲート／SPACE＝低重力＋重力井戸／JUNGLE＝障害物＋水場で減速。</p>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
